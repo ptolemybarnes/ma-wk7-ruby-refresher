@@ -1,3 +1,7 @@
+require('net/http')
+require('json')
+require('date')
+
 # keep only the elements that start with an a
 def select_elements_starting_with_a(array)
   array.select {|word| word[0] == 'a' }
@@ -216,8 +220,7 @@ end
 
 # count the number of words in a file
 def word_count_a_file(file_path)
-  file = File.new(file_path, "r")
-  file.read.split(" ").size
+  File.new(file_path, "r").read.split(" ").size
 end
 
 # --- tougher ones ---
@@ -226,12 +229,16 @@ end
 # called call_method_from_string('foobar')
 # the method foobar should be invoked
 def call_method_from_string(str_method)
+  send(str_method)
 end
 
 # return true if the date is a uk bank holiday for 2014
 # the list of bank holidays is here:
 # https://www.gov.uk/bank-holidays
 def is_a_2014_bank_holiday?(date)
+  holidays      = JSON.parse(Net::HTTP.get(URI('https://www.gov.uk/bank-holidays.json')))
+  holiday_dates = holidays['england-and-wales']['events'].map {|hol| hol['date'] }
+  holiday_dates.include? date.strftime('%Y-%m-%d')
 end
 
 # given your birthday this year, this method tells you
@@ -239,6 +246,11 @@ end
 # e.g. january 1st, will next be a friday in 2016
 # return the day as a capitalized string like 'Friday'
 def your_birthday_is_on_a_friday_in_the_year(birthday)
+  birthday = DateTime.new(birthday.year, birthday.month, birthday.day)
+  until birthday.friday?
+    birthday = birthday.next_year
+  end
+  birthday.year
 end
 
 # in a file, total the number of times words of different lengths
@@ -247,12 +259,20 @@ end
 # and 1 that is 4 letters long. Return it as a hash in the format
 # word_length => count, e.g. {2 => 1, 3 => 5, 4 => 1}
 def count_words_of_each_length_in_a_file(file_path)
+  file = File.open(file_path, 'r').read.gsub(/[^a-z0-9\s]/i, '')
+  word_lengths       = file.split(" ").map {|word| word.length }
+
+  word_lengths_count = Hash.new(0)
+  word_lengths.each {|length| word_lengths_count[length] += 1}
+  word_lengths_count
 end
 
 # implement fizzbuzz without modulo, i.e. the % method
 # go from 1 to 100
 # (there's no RSpec test for this one)
+
 def fizzbuzz_without_modulo
+  # See fizzbuzz-sans-mod in baby-steps repo.
 end
 
 # print the lyrics of the song 99 bottles of beer on the wall
